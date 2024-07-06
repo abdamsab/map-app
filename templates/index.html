@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Geocode and Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 500px;
+            margin-top: 20px;
+            position: relative;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        .map-title {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var latitude = position.coords.latitude;
+                    var longitude = position.coords.longitude;
+
+                    // Send the device's location to the server to display the initial map
+                    $.post("/", {
+                        latitude: latitude,
+                        longitude: longitude
+                    }, function(response) {
+                        $('#map').html($(response).find('#map').html());
+                        $('#latitude').val(latitude);
+                        $('#longitude').val(longitude);
+                    });
+                });
+            }
+
+            $('#map_type').change(function() {
+                var mapType = $(this).val();
+                var latitude = $('#latitude').val();
+                var longitude = $('#longitude').val();
+
+                $.ajax({
+                    url: '/update_map',
+                    method: 'POST',
+                    data: {
+                        map_type: mapType,
+                        latitude: latitude,
+                        longitude: longitude
+                    },
+                    success: function(response) {
+                        if (response.map_html) {
+                            $('#map').html(response.map_html);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Enter a location or address:</h1>
+    <form action="/" method="post">
+        <input type="text" name="address" required>
+        <label for="map_type">Select Map Type:</label>
+        <select name="map_type" id="map_type">
+            <option value="OpenStreetMap" {% if map_type == 'OpenStreetMap' %}selected{% endif %}>OpenStreetMap</option>
+            <option value="CartoDB Positron" {% if map_type == 'CartoDB Positron' %}selected{% endif %}>CartoDB Positron</option>
+            <option value="CartoDB Dark_Matter" {% if map_type == 'CartoDB Dark_Matter' %}selected{% endif %}>CartoDB Dark_Matter</option>
+        </select>
+        <input type="submit" value="Geocode">
+    </form>
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+    {% if latitude and longitude %}
+        <p>Coordinates: Latitude: {{ latitude }}, Longitude: {{ longitude }}</p>
+    {% endif %}
+    {% if map_html %}
+        <div id="map">
+            <div class="map-title">
+                <h2>Map for {{ address }}</h2>
+            </div>
+            {{ map_html|safe }}
+        </div>
+        <input type="hidden" id="latitude" value="{{ latitude }}">
+        <input type="hidden" id="longitude" value="{{ longitude }}">
+        <label for="map_type">Change Map Type:</label>
+        <select name="map_type" id="map_type">
+            <option value="OpenStreetMap" {% if map_type == 'OpenStreetMap' %}selected{% endif %}>OpenStreetMap</option>
+            <option value="CartoDB Positron" {% if map_type == 'CartoDB Positron' %}selected{% endif %}>CartoDB Positron</option>
+            <option value="CartoDB Dark_Matter" {% if map_type == 'CartoDB Dark_Matter' %}selected{% endif %}>CartoDB Dark_Matter</option>
+        </select>
+    {% endif %}
+</body>
+</html>
