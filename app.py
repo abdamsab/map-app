@@ -5,7 +5,7 @@ import folium
 
 app = Flask(__name__)
 
-user_agent = "MyGeocodingApp/1.0 (info.digitalwitch@gmail.com)"
+user_agent = "MyGeocodingApp/1.0 (myemailaddress@example.com)"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -16,6 +16,7 @@ def index():
     address = None
     map_type = 'OpenStreetMap'  # Default map type
 
+    # If a location or address is enter in the form
     if request.method == 'POST':
         if 'address' in request.form:
             address = request.form['address']
@@ -39,6 +40,7 @@ def index():
                     error = "Location not found"
             except (GeocoderServiceError, GeocoderTimedOut):
                 error = "Geocoding service error. Please try again later."
+        # Else get use the decice location to displayed a map
         elif 'latitude' in request.form and 'longitude' in request.form:
             latitude = request.form['latitude']
             longitude = request.form['longitude']
@@ -46,16 +48,20 @@ def index():
 
             # Validate latitude and longitude
             if latitude and longitude:
+                #print(latitude, longitude) # Let see if our app get location coord from device.
                 try:
                     latitude = float(latitude)
                     longitude = float(longitude)
 
+                    print(latitude, longitude)
                     # Create a map centered around the provided latitude and longitude
                     folium_map = folium.Map(location=[latitude, longitude], zoom_start=15, tiles=map_type)
+                   # print('folium_map:',folium_map)
                     folium.Marker([latitude, longitude], popup="Device Location").add_to(folium_map)
 
                     # Save the map as an HTML file
                     map_html = folium_map._repr_html_()
+                    #print('map_html:',map_html)
                 except ValueError:
                     error = "Invalid coordinates"
             else:
